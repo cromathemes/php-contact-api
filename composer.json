@@ -1,0 +1,21 @@
+{
+    "name": "cromathemes/php-contact-api",
+    "description": "A SOLID PHP contact form API with PHPMailer, environment management and session-based nonce security",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "AJ Kotze",
+            "email": "aj@cro.ma"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "phpmailer/phpmailer": "^6.9",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Api\\": "api/"
+        }
+    }
+}
