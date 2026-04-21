@@ -3,17 +3,18 @@
 namespace Api;
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 class EmailService
 {
     private PHPMailer $mailer;
+    private string $templatePath;
 
     public function __construct()
     {
-        $this->mailer = new PHPMailer(true);
+        $this->templatePath = __DIR__ . '/Templates/';
 
+        $this->mailer = new PHPMailer(true);
         $this->mailer->isSMTP();
         $this->mailer->Host       = $_ENV['MAIL_HOST'];
         $this->mailer->SMTPAuth   = true;
@@ -21,7 +22,7 @@ class EmailService
         $this->mailer->Password   = $_ENV['MAIL_PASS'];
         $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mailer->Port       = (int) $_ENV['MAIL_PORT'];
-        $this->mailer->setFrom($_ENV['MAIL_FROM'], 'Contact Form');
+        $this->mailer->setFrom($_ENV['MAIL_FROM'], 'Cro.ma');
     }
 
     public function sendConfirmation(ContactDTO $dto): void
@@ -29,8 +30,8 @@ class EmailService
         $this->mailer->clearAddresses();
         $this->mailer->addAddress($dto->email, $dto->name);
         $this->mailer->isHTML(true);
-        $this->mailer->Subject = 'Thank you for getting in touch';
-        $this->mailer->Body    = $this->confirmationTemplate($dto);
+        $this->mailer->Subject = 'Thank you for reaching out';
+        $this->mailer->Body    = $this->render('confirmation.html', $dto);
         $this->mailer->send();
     }
 
@@ -40,26 +41,29 @@ class EmailService
         $this->mailer->addAddress($_ENV['MAIL_TO']);
         $this->mailer->isHTML(true);
         $this->mailer->Subject = 'New contact form submission from ' . $dto->name;
-        $this->mailer->Body    = $this->notificationTemplate($dto);
+        $this->mailer->Body    = $this->render('notification.html', $dto);
         $this->mailer->send();
     }
 
-    private function confirmationTemplate(ContactDTO $dto): string
+    private function render(string $template, ContactDTO $dto): string
     {
-        return "
-            <p>Hi {$dto->name},</p>
-            <p>Thank you for getting in touch. We have received your message and will get back to you shortly.</p>
-            <p>Best regards</p>
-        ";
-    }
+        $path = $this->templatePath . $template;
 
-    private function notificationTemplate(ContactDTO $dto): string
-    {
-        return "
-            <p><strong>Name:</strong> {$dto->name}</p>
-            <p><strong>Email:</strong> {$dto->email}</p>
-            <p><strong>Phone:</strong> {$dto->phone}</p>
-            <p><strong>Message:</strong> {$dto->message}</p>
-        ";
+        if (!file_exists($path)) {
+            throw new \RuntimeException("Email template not found: {$template}");
+        }
+
+        $html = file_get_contents($path);
+
+        return str_replace(
+            ['{{NAME}}', '{{EMAIL}}', '{{PHONE}}', '{{MESSAGE}}'],
+            [
+                htmlspecialchars($dto->name,    ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($dto->email,   ENT_QUOTES, 'UTF-8'),
+                htmlspecialchars($dto->phone,   ENT_QUOTES, 'UTF-8'),
+                nl2br(htmlspecialchars($dto->message, ENT_QUOTES, 'UTF-8')),
+            ],
+            $html
+        );
     }
 }
