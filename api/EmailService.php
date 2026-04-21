@@ -12,7 +12,7 @@ class EmailService
 
     public function __construct()
     {
-        $this->templatePath = __DIR__ . '/Templates/';
+        $this->templatePath = __DIR__ . '/templates/';
 
         $this->mailer = new PHPMailer(true);
         $this->mailer->isSMTP();
